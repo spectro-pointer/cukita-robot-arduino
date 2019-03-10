@@ -1,0 +1,119 @@
+// 31-01-2019  cambio de direcion en los motores
+//30-01-2019 modificado analogoWrite por digitalWrite para el nuevo driver 
+//corregido al 28-01-2019  
+// comande dc avec pontenciometre  25-01-2019
+#define limite 35 // pedido max
+#define vvv 10
+#define cincoV 13
+#define pot A0
+#define  horario 5
+#define  anti 6
+#define tol 1   // tolerancia
+#define velocidad 9 // velocidad pwm motor pin9 nuevo driver 
+// param map
+#define pmin 375
+#define pmax 905
+#define amin 100
+#define amax 260
+#define EN_PIN_1 A5  // enable driver VNH2SP30
+int velo = 150 ;
+int angulo = 185;
+int pedido = 185;
+int val = 1 ;
+int valpot =0;
+int perdido = 180;
+boolean ok = true ; // pedido = angulo
+
+void setup() {
+  // put your setup code here, to run once:
+Serial.begin(9600);
+pedido = 185 ;
+ADCSRA = 132; // Fcan 1Mhz au lieu de 125Khz http://forum.arduino.cc/index.php?topic=435009.0
+pinMode ( vvv,INPUT_PULLUP);
+pinMode (cincoV,OUTPUT);
+pinMode ( pot,INPUT);
+pinMode (horario,OUTPUT);
+pinMode (anti,OUTPUT);
+digitalWrite(anti,HIGH);
+digitalWrite(horario,HIGH);
+digitalWrite(cincoV,HIGH);
+pinMode(EN_PIN_1, OUTPUT);
+pinMode(velocidad,OUTPUT);
+digitalWrite(EN_PIN_1,HIGH);
+analogWrite( velocidad,velo);
+}
+
+void run_motor(){
+  while (ok==false) {
+    if (angulo > pedido + tol) {
+      digitalWrite(horario,LOW);
+      digitalWrite(anti,HIGH);
+//     Serial.print("anti ");
+//     Serial.println(angulo);
+    } else if (angulo <  pedido - tol) { 
+      digitalWrite(anti,LOW);
+      digitalWrite(horario,HIGH);
+//      Serial.print("horario ");
+//     Serial.println(angulo);
+    }
+      valpot=analogRead(pot);
+      angulo = map(valpot,pmin,pmax,amin,amax);
+    if((pedido < angulo +tol+1) && (pedido > angulo -tol-1)) {
+      ok=true;   
+      digitalWrite(anti,LOW);
+      digitalWrite(horario,LOW);
+    }
+  }
+}
+
+
+void loop() {
+  // put your main code here, to run repeatedly:
+String rec;
+ while (Serial.available()) {
+    char c = Serial.read();  //gets one byte from serial buffer
+    rec += c; //makes the string readString
+    delay(2);  //slow looping to allow buffer to fill with next character
+  }
+if (rec.length()>0){
+    perdido=pedido;
+    pedido = rec.toInt();  //convert readString into a number
+//   Serial.println(pedido);
+  if (abs(pedido) < limite -tol){
+      if (val == 1){
+           pedido += 185 ; // pedido = 185 - pedido   cambio de direccion en los motores
+      }else {
+           pedido = 185 - pedido ;           // pedido += 185;
+      }
+   }else {pedido=perdido;}
+ }
+ 
+ valpot=analogRead(pot);
+//  Serial.print("pot ");
+//  Serial.print(valpot);
+ angulo = map(valpot,pmin,pmax,amin,amax);
+//   Serial.print(" angulo ");
+//   Serial.print(angulo);
+//   Serial.print(" pedido :");
+//   Serial.println(pedido);
+if((pedido < angulo + tol+1 ) && (pedido > angulo - tol-1)) {
+    ok=true;   
+    digitalWrite(anti,LOW);
+    digitalWrite(horario,LOW);
+//    Serial.println("ok");
+  } else {
+ //    Serial.println("runmotor");
+    ok=false;
+   run_motor();
+   
+  }
+ 
+val = digitalRead(vvv);
+if (val == 0 ){
+  digitalWrite(cincoV,LOW);
+}else {
+  digitalWrite(cincoV,HIGH);
+}
+delay(0);
+}
+  
