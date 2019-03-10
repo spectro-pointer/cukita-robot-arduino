@@ -3,8 +3,8 @@
 //corregido al 28-01-2019  
 // comande dc avec pontenciometre  25-01-2019
 #define limite 35 // pedido max
-#define vvv 10
-#define cincoV 13
+#define vvv 10    // se conecta con un boton a masa
+#define cincoV 13  // va conectado al divisor de tension relacionado con raspberry 2k y 1k 
 #define pot A0
 #define  horario 5
 #define  anti 6
